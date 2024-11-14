@@ -10,17 +10,16 @@
 ros::Publisher pub;
 ros::Subscriber sub;
 
-void turtleCallback(const turtlesim::Pose::ConstPtr& msg, int* vel)
+void turtleSetSpeed(const turtlesim::Pose::ConstPtr& msg, int* vel)
 	{
 	ROS_INFO("Turtle subscriber@[%f, %f, %f]",  
 	msg->x, msg->y, msg->theta);
 	geometry_msgs::Twist my_vel;
     my_vel.linear.x = vel[0];
     my_vel.linear.y = vel[1];
-    my_vel.angular.z = vel[1];
+    my_vel.angular.z = vel[2];
     pub.publish(my_vel);
 }
-
 
 
 int main (int argc, char **argv)
@@ -36,13 +35,14 @@ int main (int argc, char **argv)
 
     //Spawning a new turtle
 	turtlesim::Spawn srv1;
-	srv1.request.x = 2.0;  
-	srv1.request.y = 1.0;
+	srv1.request.x = 3.0;  
+	srv1.request.y = 3.0;
 	srv1.request.theta = 0.0;
 	srv1.request.name = "turtle2";
 	client1.call(srv1);
 	
     while(ros::ok){
+
         std::cout << "Choose a turtle:" << std::endl;
         std::cout << "1. turtle 1" << std::endl;
         std::cout << "2. turtle 2" << std::endl;
@@ -65,7 +65,7 @@ int main (int argc, char **argv)
         std::cin >> speed[0] >> speed[1] >> speed[2];
 
         pub = nh.advertise<geometry_msgs::Twist>(turtle + "/cmd_vel",1);  //check the topic name
-        sub = nh.subscribe<turtlesim::Pose>(turtle +"/pose", 1, boost::bind(turtleCallback, _1, speed));  //check the topic name
+        sub = nh.subscribe<turtlesim::Pose>(turtle +"/pose", 1, boost::bind(turtleSetSpeed, _1, speed));  //check the topic name
 
         sleep(1);
         ros::spinOnce();
