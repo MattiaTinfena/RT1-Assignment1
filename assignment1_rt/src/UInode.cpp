@@ -1,37 +1,44 @@
+#include <iostream>
+#include <string>
+#include <string.h>
 #include "ros/ros.h"
 #include "turtlesim/Pose.h"
 #include "geometry_msgs/Twist.h"
 #include "turtlesim/Spawn.h"
 #include "turtlesim/Kill.h" 
-#include <iostream>
-#include <string>
-#include <string.h>
 
-ros::Publisher pub;
+ros::Publisher pub1,pub2;
 ros::Subscriber sub;
+std::string turtle;
 
-void turtleSetSpeed(const turtlesim::Pose::ConstPtr& msg, int* vel)
-	{
-	ROS_INFO("Turtle subscriber@[%f, %f, %f]",  
-	msg->x, msg->y, msg->theta);
+void turtleSetSpeed(int* vel){
+    // Set the turtle's speed
 	geometry_msgs::Twist my_vel;
     my_vel.linear.x = vel[0];
     my_vel.linear.y = vel[1];
     my_vel.angular.z = vel[2];
-    pub.publish(my_vel);
+
+    if(turtle == "turtle1"){
+        pub1.publish(my_vel);
+    }else{
+        pub2.publish(my_vel);
+    }
 }
 
 
 int main (int argc, char **argv)
 {
-    std:: string choice;
-    int speed[3];
-
-// Initialize the node, setup the NodeHandle for handling the communication with the ROS //system  
-	ros::init(argc, argv, "turtlebot_subscriber");  
+    // Ros init
+	ros::init(argc, argv, "turtlebotUInode");  
 	ros::NodeHandle nh;
 
+    // set up the publisher
 	ros::ServiceClient client1 =  nh.serviceClient<turtlesim::Spawn>("/spawn");
+    pub1 = nh.advertise<geometry_msgs::Twist>("turtle1/cmd_vel",1); 
+    pub2 = nh.advertise<geometry_msgs::Twist>("turtle2/cmd_vel",1);  
+    
+    std:: string choice;
+    int speed[3];
 
     //Spawning a new turtle
 	turtlesim::Spawn srv1;
@@ -42,13 +49,14 @@ int main (int argc, char **argv)
 	client1.call(srv1);
 	
     while(ros::ok){
-
+        // Print the main menu
         std::cout << "Choose a turtle:" << std::endl;
         std::cout << "1. turtle 1" << std::endl;
         std::cout << "2. turtle 2" << std::endl;
         std::cout << "q. quit" << std::endl;
         std::cin >> choice;
 
+        // q to quit
         if(choice == "q"){
                 break;
             }
@@ -60,14 +68,35 @@ int main (int argc, char **argv)
                 return 0;
             }
         }
-        std::string turtle = choice == "1" ? "turtle1" : "turtle2";
-        std::cout << "Set a speed along x,y,theta" << std::endl;
-        std::cin >> speed[0] >> speed[1] >> speed[2];
 
-        pub = nh.advertise<geometry_msgs::Twist>(turtle + "/cmd_vel",1);  //check the topic name
-        sub = nh.subscribe<turtlesim::Pose>(turtle +"/pose", 1, boost::bind(turtleSetSpeed, _1, speed));  //check the topic name
+        // Read the speeds
+        turtle = choice == "1" ? "turtle1" : "turtle2";
+        std::cout << "Set a speed along x" << std::endl;
+        std::cin >> speed[0];
+        std::cout << "Set a speed along y" << std::endl;
+        std::cin >> speed[1];
+        std::cout << "Set a speed along theta" << std::endl;
+        std::cin >> speed[2];
 
-        sleep(1);
+        int duration = 10;  // Make the turtle move for 1 second
+        ros::Rate rate(10);  // Set the loop rate in Hz
+
+        while(ros::ok && duration > 0){
+            if(duration == 10){
+                turtleSetSpeed(speed);
+            }
+            duration--;
+            ros::spinOnce();
+            rate.sleep();
+        }
+
+        // Reset the speed
+        speed[0] = 0;
+        speed[1] = 0;
+        speed[2] = 0;
+
+        turtleSetSpeed(speed);
+
         ros::spinOnce();
     }
 	return 0;
