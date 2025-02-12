@@ -9,6 +9,8 @@ ros::Publisher pub2;
 ros::Publisher distance_pub;
 geometry_msgs::Twist stop_msg;
 
+int treshold = 2;
+
 // Are saved also the previous distance and the previous position in order to 
 // unlock the turtles if they want ot make an allowed movement 
 
@@ -97,25 +99,29 @@ int main (int argc, char **argv){
         // Publish the distance
         distance_msg.data = distance[0];
         distance_pub.publish(distance_msg);
-
+        
+        if (ros::param::has("/tresholdParam")) {
+            ros::param::get("/tresholdParam", treshold);
+        }
+        
         // Check if the turtles are colliding
-        if(distance[0] < 2 && distance[0] < distance[1]){
+        if(distance[0] < treshold && distance[0] < distance[1]){
             stop = true;
         }
 
         // Check if the turtle1 is colliding against the borders 
-        if( (xt1[0] >= 8 && (xt1[0] > xt1[1])) || 
-            (yt1[0] >= 8 && (yt1[0] > yt1[1])) || 
-            (xt1[0] <= 2 && (xt1[0] < xt1[1])) || 
-            (yt1[0] <= 2 && (yt1[0] < yt1[1]))){
+        if( (xt1[0] >= 10-treshold && (xt1[0] > xt1[1])) || 
+            (yt1[0] >= 10-treshold && (yt1[0] > yt1[1])) || 
+            (xt1[0] <= treshold && (xt1[0] < xt1[1])) || 
+            (yt1[0] <= treshold && (yt1[0] < yt1[1]))){
 
             distanceFromBorders1 = true;
         }
         // Check if the turtle2 is colliding against the borders
-        if( (xt2[0] >= 8 && (xt2[0] > xt2[1])) || 
-            (yt2[0] >= 8 && (yt2[0] > yt2[1])) || 
-            (xt2[0] <= 2 && (xt2[0] < xt2[1])) || 
-            (yt2[0] <= 2 && (yt2[0] < yt2[1]))){
+        if( (xt2[0] >= 10-treshold && (xt2[0] > xt2[1])) || 
+            (yt2[0] >= 10-treshold && (yt2[0] > yt2[1])) || 
+            (xt2[0] <= treshold && (xt2[0] < xt2[1])) || 
+            (yt2[0] <= treshold && (yt2[0] < yt2[1]))){
             
             distanceFromBorders2 = true;
         }
